@@ -10,5 +10,10 @@ namespace HazeClue.Core.Domain.Entities
         public string UserId { get; set; } = string.Empty;
         public AppUser? User { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public int DurationMinutes { get; set; } = 0;
+        public int Intensity { get; set; } = 0;
+        public string? DeviceId { get; set; }
+        public Device? Device { get; set; }
+        public DateTime? CompletedAt { get; set; }
     }
 }

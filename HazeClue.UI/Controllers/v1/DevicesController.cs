@@ -1,5 +1,6 @@
 using HazeClue.Core.Domain.Entities;
 using HazeClue.Infrastructure.DbContext;
+using HazeClue.UI.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -27,10 +28,21 @@ namespace HazeClue.UI.Controllers.v1
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddDevice([FromBody] Device device)
+        public async Task<IActionResult> AddDevice([FromBody] CreateDeviceDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            device.UserId = userId!;
+            
+            var existing = await _context.Devices.FirstOrDefaultAsync(d => d.UserId == userId && d.MacAddress == dto.MacAddress);
+            if (existing != null) return BadRequest(new { message = "Device already registered." });
+
+            var device = new Device
+            {
+                UserId = userId!,
+                Name = dto.Name,
+                MacAddress = dto.MacAddress,
+                Status = "offline"
+            };
+
             _context.Devices.Add(device);
             await _context.SaveChangesAsync();
             return Ok(device);

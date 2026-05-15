@@ -39,5 +39,27 @@ namespace HazeClue.UI.Controllers.v1
             await _context.SaveChangesAsync();
             return Ok(notification);
         }
+
+        [HttpPatch("{id}/read")]
+        public async Task<IActionResult> MarkRead(string id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+            if (notification == null) return NotFound();
+
+            notification.IsRead = true;
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPatch("read-all")]
+        public async Task<IActionResult> MarkAllRead()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var unread = await _context.Notifications.Where(n => n.UserId == userId && !n.IsRead).ToListAsync();
+            foreach (var n in unread) n.IsRead = true;
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
     }
 }

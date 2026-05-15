@@ -2,6 +2,7 @@ using HazeClue.Core.Domain.Entities;
 using HazeClue.UI.DTOs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -49,7 +50,12 @@ namespace HazeClue.UI.Controllers.v1
             return StatusCode(201, new
             {
                 access_token = token,
-                user = new { id = user.Id, email = user.Email, fullName = user.FullName }
+                user = new { 
+                    id = user.Id, 
+                    email = user.Email, 
+                    fullName = user.FullName,
+                    onboardingCompleted = user.OnboardingCompleted
+                }
             });
         }
 
@@ -70,7 +76,12 @@ namespace HazeClue.UI.Controllers.v1
             return Ok(new
             {
                 access_token = token,
-                user = new { id = user.Id, email = user.Email, fullName = user.FullName }
+                user = new { 
+                    id = user.Id, 
+                    email = user.Email, 
+                    fullName = user.FullName,
+                    onboardingCompleted = user.OnboardingCompleted 
+                }
             });
         }
 
@@ -97,6 +108,83 @@ namespace HazeClue.UI.Controllers.v1
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null) return Ok(new { message = "If the email exists, an OTP has been sent." }); // Security best practice
+
+            var otp = new Random().Next(100000, 999999).ToString();
+            user.OtpCode = otp;
+            user.OtpExpiry = DateTime.UtcNow.AddMinutes(15);
+            await _userManager.UpdateAsync(user);
+
+            // In a real app, send email here. For demo, we just print or assume it worked.
+            Console.WriteLine($"OTP for {user.Email} is {otp}");
+
+            return Ok(new { message = "OTP generated successfully." });
+        }
+
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null || user.OtpCode != dto.Otp || user.OtpExpiry < DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "Invalid or expired OTP." });
+            }
+
+            // OTP valid, generate a reset token
+            var resetToken = Guid.NewGuid().ToString();
+            user.ResetToken = resetToken;
+            user.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(30);
+            user.OtpCode = null; // Clear OTP
+            user.OtpExpiry = null;
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new { message = "OTP verified.", resetToken });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            // In the mobile flow, the user submits OTP and new password together. We verify OTP again.
+            if (user == null || user.OtpCode != dto.Otp || user.OtpExpiry < DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "Invalid or expired OTP." });
+            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { message = string.Join(", ", result.Errors.Select(e => e.Description)) });
+            }
+
+            user.OtpCode = null;
+            user.OtpExpiry = null;
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new { message = "Password reset successfully." });
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            // Since we use stateless JWT, just returning OK. 
+            // Mobile app will delete the token locally.
+            return Ok(new { message = "Logged out successfully." });
         }
     }
 }
