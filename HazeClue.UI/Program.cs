@@ -22,11 +22,21 @@ namespace HazeClue.UI
 
             builder.Services.ConfigureServices(builder.Configuration);
 
+            // Configure CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader();
+                });
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
            
-            app.UseSwagger();
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
@@ -42,6 +52,8 @@ namespace HazeClue.UI
 
             app.UseHsts();
             app.UseHttpsRedirection();
+
+            app.UseCors("AllowAll"); // Apply CORS before routing
 
             app.UseRouting();
 

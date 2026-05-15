@@ -1,4 +1,4 @@
-﻿using HazeClue.Core.Domain.Entities;
+using HazeClue.Core.Domain.Entities;
 using HazeClue.Infrastructure.DbContext;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -39,30 +39,7 @@ namespace HazeClue.UI.StartupExtensions
                 options.Filters.Add(new ConsumesAttribute("application/json"));
             });
 
-            #region JWT
-
-            services.AddAuthentication(Options =>
-            {
-                Options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                Options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                Options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(Options =>
-            {
-                Options.SaveToken = true;
-                Options.RequireHttpsMetadata = false; 
-                Options.TokenValidationParameters = new TokenValidationParameters()
-                {
-                    ValidateIssuer = true,
-                    ValidIssuer = configuration["Jwt:Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = configuration["Jwt:Audience"],
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SecretKey"])) 
-                };
-            });
-
-            #endregion
+            // JWT config moved below Identity
 
             #region Swagger Setting
 
@@ -129,6 +106,31 @@ namespace HazeClue.UI.StartupExtensions
               .AddDefaultTokenProviders()
               .AddUserStore<UserStore<AppUser, IdentityRole, ApplicationDbContext, string>>()
               .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext, string>>();
+
+            #endregion
+
+            #region JWT
+
+            services.AddAuthentication(Options =>
+            {
+                Options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                Options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                Options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(Options =>
+            {
+                Options.SaveToken = true;
+                Options.RequireHttpsMetadata = false; 
+                Options.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = configuration["Jwt:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = configuration["Jwt:Audience"],
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SecretKey"])) 
+                };
+            });
 
             #endregion
 

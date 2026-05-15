@@ -1,4 +1,4 @@
-﻿using HazeClue.Core.Domain.Entities;
+using HazeClue.Core.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +9,10 @@ namespace HazeClue.Infrastructure.DbContext
     public class ApplicationDbContext : IdentityDbContext<AppUser,IdentityRole,string>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options){ }
+
+        public DbSet<Device> Devices { get; set; }
+        public DbSet<FocusSession> Sessions { get; set; }
+        public DbSet<AppNotification> Notifications { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
