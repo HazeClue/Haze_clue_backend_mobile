@@ -1,0 +1,426 @@
+{
+  "info": {
+    "name": "HazeClue Mobile API v1",
+    "description": "Comprehensive Postman collection for the HazeClue Mobile API (.NET 8 Clean Architecture). Contains all endpoints, detailed request bodies, and expected success examples.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Account & Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password123!\",\n  \"phoneNumber\": \"+1234567890\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/account/register", "host": [ "{{baseUrl}}" ], "path": [ "account", "register" ] },
+            "description": "Registers a new user and returns a 201 Created with a success message."
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/account/login", "host": [ "{{baseUrl}}" ], "path": [ "account", "login" ] },
+            "description": "Authenticates a user and returns a JWT access token, along with basic user details."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/account/forgot-password", "host": [ "{{baseUrl}}" ], "path": [ "account", "forgot-password" ] }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/account/verify-otp", "host": [ "{{baseUrl}}" ], "path": [ "account", "verify-otp" ] }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/account/reset-password", "host": [ "{{baseUrl}}" ], "path": [ "account", "reset-password" ] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/account/logout", "host": [ "{{baseUrl}}" ], "path": [ "account", "logout" ] },
+            "description": "Revokes the current JWT session."
+          }
+        },
+        {
+          "name": "Get Active Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/account/sessions", "host": [ "{{baseUrl}}" ], "path": [ "account", "sessions" ] },
+            "description": "Retrieves all active devices/sessions for the current user."
+          }
+        },
+        {
+          "name": "Revoke Session",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/account/sessions/c4b8b8eb-9d18-4b77-8c3b-240e94e5f013", "host": [ "{{baseUrl}}" ], "path": [ "account", "sessions", "c4b8b8eb-9d18-4b77-8c3b-240e94e5f013" ] },
+            "description": "Revokes a specific session by its ID."
+          }
+        },
+        {
+          "name": "Revoke Other Sessions",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/account/sessions/other", "host": [ "{{baseUrl}}" ], "path": [ "account", "sessions", "other" ] },
+            "description": "Revokes all sessions except the one currently making the request."
+          }
+        },
+        {
+          "name": "Get Security Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/account/security-logs", "host": [ "{{baseUrl}}" ], "path": [ "account", "security-logs" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. User Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/users/me", "host": [ "{{baseUrl}}" ], "path": [ "users", "me" ] }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phoneNumber\": \"+1987654321\",\n  \"country\": \"Egypt\",\n  \"address\": \"Cairo, Downtown\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users/me", "host": [ "{{baseUrl}}" ], "path": [ "users", "me" ] }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users/me/password", "host": [ "{{baseUrl}}" ], "path": [ "users", "me", "password" ] }
+          }
+        },
+        {
+          "name": "Get Notification Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/users/me/notification-settings", "host": [ "{{baseUrl}}" ], "path": [ "users", "me", "notification-settings" ] }
+          }
+        },
+        {
+          "name": "Update Notification Settings",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionReminders\": true,\n  \"dailyTips\": false,\n  \"appUpdates\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users/me/notification-settings", "host": [ "{{baseUrl}}" ], "path": [ "users", "me", "notification-settings" ] }
+          }
+        },
+        {
+          "name": "Get Device Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/users/me/device-settings", "host": [ "{{baseUrl}}" ], "path": [ "users", "me", "device-settings" ] }
+          }
+        },
+        {
+          "name": "Update Device Settings",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"autoConnect\": true,\n  \"disconnectAlert\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users/me/device-settings", "host": [ "{{baseUrl}}" ], "path": [ "users", "me", "device-settings" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Assessments & Consent",
+      "item": [
+        {
+          "name": "Submit Health Assessment",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gender\": \"Male\",\n  \"age\": 25,\n  \"hasMedicalConditions\": false,\n  \"takesMedication\": false,\n  \"pregnancyStatus\": \"None\",\n  \"neurologicalDisorders\": \"None\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/assessments/health", "host": [ "{{baseUrl}}" ], "path": [ "assessments", "health" ] }
+          }
+        },
+        {
+          "name": "Submit tDCS Consent",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hasEpilepsy\": false,\n  \"hasImplants\": false,\n  \"understandsRisks\": true,\n  \"agreesToTerms\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/assessments/tdcs-consent", "host": [ "{{baseUrl}}" ], "path": [ "assessments", "tdcs-consent" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Devices",
+      "item": [
+        {
+          "name": "Get Devices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/devices", "host": [ "{{baseUrl}}" ], "path": [ "devices" ] }
+          }
+        },
+        {
+          "name": "Add Device",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"NeuroSky MindWave\",\n  \"macAddress\": \"AA:BB:CC:DD:EE:FF\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/devices", "host": [ "{{baseUrl}}" ], "path": [ "devices" ] }
+          }
+        },
+        {
+          "name": "Delete Device",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/devices/1", "host": [ "{{baseUrl}}" ], "path": [ "devices", "1" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Sessions & Insights",
+      "item": [
+        {
+          "name": "Get All Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/sessions", "host": [ "{{baseUrl}}" ], "path": [ "sessions" ] }
+          }
+        },
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"durationMinutes\": 20,\n  \"moduleName\": \"Focus Enhancement\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/sessions", "host": [ "{{baseUrl}}" ], "path": [ "sessions" ] }
+          }
+        },
+        {
+          "name": "Pause Session",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/sessions/SESSION_ID_HERE/pause", "host": [ "{{baseUrl}}" ], "path": [ "sessions", "SESSION_ID_HERE", "pause" ] }
+          }
+        },
+        {
+          "name": "Resume Session",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/sessions/SESSION_ID_HERE/resume", "host": [ "{{baseUrl}}" ], "path": [ "sessions", "SESSION_ID_HERE", "resume" ] }
+          }
+        },
+        {
+          "name": "Complete Session",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"averageConcentration\": 75,\n  \"durationCompletedSeconds\": 1200\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/sessions/SESSION_ID_HERE/complete", "host": [ "{{baseUrl}}" ], "path": [ "sessions", "SESSION_ID_HERE", "complete" ] }
+          }
+        },
+        {
+          "name": "Get Insights",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/sessions/insights", "host": [ "{{baseUrl}}" ], "path": [ "sessions", "insights" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/notifications", "host": [ "{{baseUrl}}" ], "path": [ "notifications" ] }
+          }
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/notifications/1/read", "host": [ "{{baseUrl}}" ], "path": [ "notifications", "1", "read" ] }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/notifications/read-all", "host": [ "{{baseUrl}}" ], "path": [ "notifications", "read-all" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/dashboard/stats", "host": [ "{{baseUrl}}" ], "path": [ "dashboard", "stats" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Support",
+      "item": [
+        {
+          "name": "Contact Us",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"I am having trouble connecting my device.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/support/ticket", "host": [ "{{baseUrl}}" ], "path": [ "support", "ticket" ] }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5032/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "PASTE_YOUR_TOKEN_HERE",
+      "type": "string"
+    }
+  ]
+}
