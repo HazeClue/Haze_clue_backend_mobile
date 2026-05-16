@@ -11,5 +11,10 @@ namespace HazeClue.Core.Domain.Entities
         public DateTime? ResetTokenExpiry { get; set; }
         public bool OnboardingCompleted { get; set; } = false;
         public string? EligibilityStatus { get; set; }
+        
+        public string? Nickname { get; set; }
+        public string? Country { get; set; }
+        public string? Address { get; set; }
+        public string? Gender { get; set; }
     }
 }

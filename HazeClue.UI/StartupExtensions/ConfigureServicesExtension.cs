@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace HazeClue.UI.StartupExtensions
 {
@@ -129,6 +131,26 @@ namespace HazeClue.UI.StartupExtensions
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SecretKey"])) 
+                };
+                Options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var dbContext = context.HttpContext.RequestServices.GetRequiredService<HazeClue.Infrastructure.DbContext.ApplicationDbContext>();
+                        var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+
+                        if (string.IsNullOrEmpty(jti))
+                        {
+                            context.Fail("Missing JTI claim.");
+                            return;
+                        }
+
+                        var session = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(dbContext.UserSessions, s => s.TokenJti == jti);
+                        if (session == null || session.IsRevoked)
+                        {
+                            context.Fail("Session is revoked.");
+                        }
+                    }
                 };
             });
 

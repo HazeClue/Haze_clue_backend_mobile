@@ -16,6 +16,9 @@ namespace HazeClue.Infrastructure.DbContext
         public DbSet<PuzzleResult> PuzzleResults { get; set; }
         public DbSet<HealthAssessment> HealthAssessments { get; set; }
         public DbSet<ConsentRecord> ConsentRecords { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
+        public DbSet<SecurityLog> SecurityLogs { get; set; }
+        public DbSet<NotificationSetting> NotificationSettings { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

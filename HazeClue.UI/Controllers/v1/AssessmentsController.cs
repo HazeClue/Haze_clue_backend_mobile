@@ -40,6 +40,21 @@ namespace HazeClue.UI.Controllers.v1
             _context.HealthAssessments.Add(assessment);
             await _context.SaveChangesAsync();
             
+            // Extract gender and update user
+            if (dto.SingleSelections is JsonElement singleSelectionsElement)
+            {
+                if (singleSelectionsElement.TryGetProperty("3", out var genderProperty))
+                {
+                    var user = await _userManager.FindByIdAsync(userId);
+                    if (user != null)
+                    {
+                        var genderIndex = genderProperty.ToString();
+                        user.Gender = genderIndex == "0" ? "Female" : (genderIndex == "1" ? "Male" : genderIndex);
+                        await _userManager.UpdateAsync(user);
+                    }
+                }
+            }
+
             return Ok(new { message = "Health assessment saved successfully.", eligibilityStatus = assessment.EligibilityStatus });
         }
 

@@ -79,5 +79,45 @@ namespace HazeClue.UI.Controllers.v1
             await _context.SaveChangesAsync();
             return Ok(puzzleResult);
         }
+        [HttpGet("insights")]
+        public async Task<IActionResult> GetInsights()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var sessions = await _context.Sessions
+                .Where(s => s.UserId == userId && s.Status == "completed")
+                .ToListAsync();
+
+            var totalFocusMinutes = sessions.Sum(s => s.DurationMinutes);
+            var activeDaysCount = sessions.Select(s => s.CreatedAt.Date).Distinct().Count();
+            var averageMinutesPerDay = activeDaysCount > 0 ? (int)Math.Round((double)totalFocusMinutes / activeDaysCount) : 0;
+
+            // Weekly Data (last 7 days)
+            var weeklyData = new List<int>();
+            for (int i = 6; i >= 0; i--)
+            {
+                var targetDate = DateTime.UtcNow.Date.AddDays(-i);
+                var dailySum = sessions.Where(s => s.CreatedAt.Date == targetDate).Sum(s => s.DurationMinutes);
+                weeklyData.Add(dailySum);
+            }
+
+            // Monthly Data (last 6 months)
+            var monthlyData = new List<int>();
+            for (int i = 5; i >= 0; i--)
+            {
+                var targetMonth = DateTime.UtcNow.Date.AddMonths(-i);
+                var monthlySum = sessions
+                    .Where(s => s.CreatedAt.Year == targetMonth.Year && s.CreatedAt.Month == targetMonth.Month)
+                    .Sum(s => s.DurationMinutes);
+                monthlyData.Add(monthlySum);
+            }
+
+            return Ok(new
+            {
+                totalFocusMinutes,
+                averageMinutesPerDay,
+                weeklyData,
+                monthlyData
+            });
+        }
     }
 }
