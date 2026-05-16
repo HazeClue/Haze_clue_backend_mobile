@@ -33,6 +33,8 @@ namespace HazeClue.UI
                 });
             });
 
+            builder.Services.AddSignalR();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -62,6 +64,7 @@ namespace HazeClue.UI
 
 
             app.MapControllers();
+            app.MapHub<HazeClue.UI.Hubs.SessionHub>("/sessionHub");
 
             app.Run();
         }

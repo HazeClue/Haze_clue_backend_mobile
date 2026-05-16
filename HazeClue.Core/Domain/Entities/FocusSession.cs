@@ -15,5 +15,7 @@ namespace HazeClue.Core.Domain.Entities
         public string? DeviceId { get; set; }
         public Device? Device { get; set; }
         public DateTime? CompletedAt { get; set; }
+        public int AverageConcentration { get; set; } = 0;
+        public int ActualDurationSeconds { get; set; } = 0;
     }
 }

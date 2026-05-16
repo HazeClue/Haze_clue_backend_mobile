@@ -49,7 +49,7 @@ namespace HazeClue.UI.Controllers.v1
         }
 
         [HttpPost("{id}/complete")]
-        public async Task<IActionResult> CompleteSession(string id)
+        public async Task<IActionResult> CompleteSession(string id, [FromBody] CompleteSessionDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var session = await _context.Sessions.FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
@@ -57,6 +57,33 @@ namespace HazeClue.UI.Controllers.v1
 
             session.Status = "completed";
             session.CompletedAt = DateTime.UtcNow;
+            session.AverageConcentration = dto.AverageConcentration;
+            session.ActualDurationSeconds = dto.ActualDurationSeconds;
+            
+            await _context.SaveChangesAsync();
+            return Ok(session);
+        }
+
+        [HttpPost("{id}/pause")]
+        public async Task<IActionResult> PauseSession(string id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var session = await _context.Sessions.FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
+            if (session == null) return NotFound();
+
+            session.Status = "paused";
+            await _context.SaveChangesAsync();
+            return Ok(session);
+        }
+
+        [HttpPost("{id}/resume")]
+        public async Task<IActionResult> ResumeSession(string id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var session = await _context.Sessions.FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
+            if (session == null) return NotFound();
+
+            session.Status = "active";
             await _context.SaveChangesAsync();
             return Ok(session);
         }
