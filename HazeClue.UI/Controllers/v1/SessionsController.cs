@@ -114,17 +114,49 @@ namespace HazeClue.UI.Controllers.v1
                 .Where(s => s.UserId == userId && s.Status == "completed")
                 .ToListAsync();
 
-            var totalFocusMinutes = sessions.Sum(s => s.DurationMinutes);
+            // Handle legacy data where ActualDurationSeconds might be 0 but DurationMinutes > 0
+            int totalFocusSeconds = sessions.Sum(s => s.ActualDurationSeconds > 0 ? s.ActualDurationSeconds : s.DurationMinutes * 60);
+            var totalFocusMinutes = totalFocusSeconds / 60;
+            
+            var totalSessionsCount = sessions.Count;
+            var overallAverageConcentration = totalSessionsCount > 0 ? (int)Math.Round(sessions.Average(s => s.AverageConcentration)) : 0;
+
             var activeDaysCount = sessions.Select(s => s.CreatedAt.Date).Distinct().Count();
             var averageMinutesPerDay = activeDaysCount > 0 ? (int)Math.Round((double)totalFocusMinutes / activeDaysCount) : 0;
 
             // Weekly Data (last 7 days)
             var weeklyData = new List<int>();
+            int currentWeekSeconds = 0;
+            int lastWeekSeconds = 0;
+
             for (int i = 6; i >= 0; i--)
             {
                 var targetDate = DateTime.UtcNow.Date.AddDays(-i);
-                var dailySum = sessions.Where(s => s.CreatedAt.Date == targetDate).Sum(s => s.DurationMinutes);
-                weeklyData.Add(dailySum);
+                var dailySumSeconds = sessions
+                    .Where(s => s.CreatedAt.Date == targetDate)
+                    .Sum(s => s.ActualDurationSeconds > 0 ? s.ActualDurationSeconds : s.DurationMinutes * 60);
+                
+                weeklyData.Add(dailySumSeconds / 60);
+                currentWeekSeconds += dailySumSeconds;
+            }
+
+            for (int i = 13; i >= 7; i--)
+            {
+                var targetDate = DateTime.UtcNow.Date.AddDays(-i);
+                var dailySumSeconds = sessions
+                    .Where(s => s.CreatedAt.Date == targetDate)
+                    .Sum(s => s.ActualDurationSeconds > 0 ? s.ActualDurationSeconds : s.DurationMinutes * 60);
+                lastWeekSeconds += dailySumSeconds;
+            }
+
+            int improvementPercentage = 0;
+            if (lastWeekSeconds > 0)
+            {
+                improvementPercentage = (int)Math.Round(((double)(currentWeekSeconds - lastWeekSeconds) / lastWeekSeconds) * 100);
+            }
+            else if (currentWeekSeconds > 0)
+            {
+                improvementPercentage = 100; // 100% improvement from nothing
             }
 
             // Monthly Data (last 6 months)
@@ -132,16 +164,19 @@ namespace HazeClue.UI.Controllers.v1
             for (int i = 5; i >= 0; i--)
             {
                 var targetMonth = DateTime.UtcNow.Date.AddMonths(-i);
-                var monthlySum = sessions
+                var monthlySumSeconds = sessions
                     .Where(s => s.CreatedAt.Year == targetMonth.Year && s.CreatedAt.Month == targetMonth.Month)
-                    .Sum(s => s.DurationMinutes);
-                monthlyData.Add(monthlySum);
+                    .Sum(s => s.ActualDurationSeconds > 0 ? s.ActualDurationSeconds : s.DurationMinutes * 60);
+                monthlyData.Add(monthlySumSeconds / 60);
             }
 
             return Ok(new
             {
                 totalFocusMinutes,
                 averageMinutesPerDay,
+                overallAverageConcentration,
+                totalSessionsCount,
+                improvementPercentage,
                 weeklyData,
                 monthlyData
             });
