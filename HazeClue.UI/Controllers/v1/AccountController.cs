@@ -181,7 +181,7 @@ namespace HazeClue.UI.Controllers.v1
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null) return Ok(new { message = "If the email exists, an OTP has been sent." }); // Security best practice
 
-            var otp = new Random().Next(100000, 999999).ToString();
+            var otp = "111111"; // Static OTP for now
             user.OtpCode = otp;
             user.OtpExpiry = DateTime.UtcNow.AddMinutes(15);
             await _userManager.UpdateAsync(user);
@@ -207,8 +207,7 @@ namespace HazeClue.UI.Controllers.v1
             var resetToken = Guid.NewGuid().ToString();
             user.ResetToken = resetToken;
             user.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(30);
-            user.OtpCode = null; // Clear OTP
-            user.OtpExpiry = null;
+            // Do not clear OTP here, since the mobile flow sends OTP again in ResetPassword
             await _userManager.UpdateAsync(user);
 
             return Ok(new { message = "OTP verified.", resetToken });
