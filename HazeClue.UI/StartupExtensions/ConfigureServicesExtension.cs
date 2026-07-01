@@ -11,6 +11,8 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 namespace HazeClue.UI.StartupExtensions
 {
@@ -40,6 +42,30 @@ namespace HazeClue.UI.StartupExtensions
                 options.Filters.Add(new ProducesAttribute("application/json"));
                 options.Filters.Add(new ConsumesAttribute("application/json"));
             });
+
+            // FluentValidation setup
+            services.AddFluentValidationAutoValidation();
+            services.AddValidatorsFromAssemblyContaining<Program>();
+
+            // Configure Rate Limiting
+            services.AddRateLimiter(options =>
+            {
+                options.GlobalLimiter = System.Threading.RateLimiting.PartitionedRateLimiter.Create<Microsoft.AspNetCore.Http.HttpContext, string>(context =>
+                    System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: context.User.Identity?.Name ?? context.Request.Headers.Host.ToString(),
+                        factory: partition => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 100,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(1)
+                        }));
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            });
+
+            services.AddMemoryCache();
+            services.AddExceptionHandler<Middlewares.GlobalExceptionHandler>();
+            services.AddProblemDetails();
 
             // JWT config moved below Identity
 

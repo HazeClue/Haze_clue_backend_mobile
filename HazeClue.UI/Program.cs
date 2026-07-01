@@ -43,7 +43,9 @@ namespace HazeClue.UI
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
-           
+            app.UseExceptionHandler();
+            app.UseStatusCodePages();
+
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
@@ -61,6 +63,8 @@ namespace HazeClue.UI
             app.UseHttpsRedirection();
 
             app.UseCors("AllowSpecific"); // Apply CORS before routing
+            
+            app.UseRateLimiter(); // Apply Rate Limiting
 
             app.UseRouting();
 
