@@ -13,10 +13,12 @@ namespace HazeClue.UI.Controllers.v1
     public class InsightsController : CustomControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly HazeClue.Core.Domain.Contracts.ILLMService _llmService;
 
-        public InsightsController(ApplicationDbContext context)
+        public InsightsController(ApplicationDbContext context, HazeClue.Core.Domain.Contracts.ILLMService llmService)
         {
             _context = context;
+            _llmService = llmService;
         }
 
         [HttpGet]
@@ -54,83 +56,128 @@ namespace HazeClue.UI.Controllers.v1
             var assessment = await _context.HealthAssessments
                 .FirstOrDefaultAsync(x => x.UserId == userId);
 
-            // Rule 1: Sleep Analysis
-            if (watchData.Any(d => d.SleepScore != null))
+            var focusSessions = await _context.Sessions
+                .Where(x => x.UserId == userId && x.CreatedAt >= lastWeek && x.Status == "completed")
+                .ToListAsync();
+
+            try
             {
-                var avgSleep = watchData.Where(d => d.SleepScore != null).Average(d => d.SleepScore);
-                if (avgSleep < 6.0)
+                var assessmentSummary = assessment?.AssessmentDataJson ?? "No onboarding assessment provided.";
+                
+                var avgSleep = watchData.Any(d => d.SleepScore != null) ? watchData.Where(d => d.SleepScore != null).Average(d => d.SleepScore).ToString() : "N/A";
+                var avgHrv = watchData.Any(d => d.Hrv != null) ? watchData.Where(d => d.Hrv != null).Average(d => d.Hrv).ToString() : "N/A";
+                var avgSteps = watchData.Any(d => d.Steps != null) ? watchData.Where(d => d.Steps != null).Average(d => d.Steps).ToString() : "N/A";
+                var watchSummary = $"Avg Sleep Score: {avgSleep}, Avg HRV: {avgHrv}, Avg Steps: {avgSteps}";
+
+                var avgConcentration = focusSessions.Any() ? focusSessions.Average(x => x.AverageConcentration).ToString() : "N/A";
+                var totalDuration = focusSessions.Sum(x => x.ActualDurationSeconds) / 60;
+                var focusSummary = $"Avg Concentration: {avgConcentration}%, Total Focus Time: {totalDuration} minutes";
+
+                var aiTip = await _llmService.GeneratePersonalizedTipAsync(assessmentSummary, watchSummary, focusSummary);
+                
+                if (!string.IsNullOrWhiteSpace(aiTip))
                 {
                     insights.Add(new UserInsight
                     {
                         UserId = userId,
                         Type = InsightType.DailyTip,
-                        Title = "Sleep Quality Alert",
-                        Message = "We noticed your sleep score has been low recently. Try our pre-sleep relaxation exercises tonight to improve your sleep quality."
+                        Title = "AI Coach Tip",
+                        Message = aiTip
                     });
                 }
-                else if (avgSleep > 7.5)
+            }
+            catch (Exception ex)
+            {
+                // Return the actual error message so we can debug it!
+                Console.WriteLine($"LLM Error: {ex.Message}");
+                insights.Add(new UserInsight
                 {
-                    insights.Add(new UserInsight
-                    {
-                        UserId = userId,
-                        Type = InsightType.DailyTip,
-                        Title = "Great Sleep",
-                        Message = "Your sleep quality has been excellent! Keep up your current evening routine."
-                    });
-                }
+                    UserId = userId,
+                    Type = InsightType.Alert,
+                    Title = "AI Coach Error",
+                    Message = ex.Message
+                });
             }
 
-            // Rule 2: Steps/Activity
-            if (watchData.Any(d => d.Steps != null))
-            {
-                var avgSteps = watchData.Where(d => d.Steps != null).Average(d => d.Steps);
-                if (avgSteps < 4000)
-                {
-                    insights.Add(new UserInsight
-                    {
-                        UserId = userId,
-                        Type = InsightType.DailyTip,
-                        Title = "Time to Move",
-                        Message = "Your daily activity is a bit low this week. Even a 15-minute walk can boost your focus and mood!"
-                    });
-                }
-            }
-            
-            // Rule 3: Integration with Assessment
-            if (assessment != null && !string.IsNullOrEmpty(assessment.AssessmentDataJson))
-            {
-                try 
-                {
-                    var doc = JsonDocument.Parse(assessment.AssessmentDataJson);
-                    // Check if user reported high stress during onboarding
-                    if (doc.RootElement.TryGetProperty("stress_level", out var stressProp) && stressProp.GetString() == "high")
-                    {
-                         var avgHrv = watchData.Where(d => d.Hrv != null).Select(d => d.Hrv).DefaultIfEmpty(0).Average();
-                         // Low HRV indicates physiological stress
-                         if (avgHrv > 0 && avgHrv < 40) 
-                         {
-                             insights.Add(new UserInsight
-                             {
-                                 UserId = userId,
-                                 Type = InsightType.Alert,
-                                 Title = "High Stress Detected",
-                                 Message = "Based on your initial assessment and your recent Heart Rate Variability, your body is experiencing high stress. Taking a short tDCS or Focus session is highly recommended."
-                             });
-                         }
-                    }
-                } catch { }
-            }
-
-            // Fallback tip if no specific rules matched
+            // Fallback rules if LLM didn't produce an insight
             if (!insights.Any())
             {
-                 insights.Add(new UserInsight
-                 {
-                     UserId = userId,
-                     Type = InsightType.DailyTip,
-                     Title = "Daily Health Tip",
-                     Message = "Staying hydrated and taking short breaks throughout the day helps maintain your focus and energy levels."
-                 });
+                // Rule 1: Sleep Analysis
+                if (watchData.Any(d => d.SleepScore != null))
+                {
+                    var avgSleep = watchData.Where(d => d.SleepScore != null).Average(d => d.SleepScore);
+                    if (avgSleep < 6.0)
+                    {
+                        insights.Add(new UserInsight
+                        {
+                            UserId = userId,
+                            Type = InsightType.DailyTip,
+                            Title = "Sleep Quality Alert",
+                            Message = "We noticed your sleep score has been low recently. Try our pre-sleep relaxation exercises tonight to improve your sleep quality."
+                        });
+                    }
+                    else if (avgSleep > 7.5)
+                    {
+                        insights.Add(new UserInsight
+                        {
+                            UserId = userId,
+                            Type = InsightType.DailyTip,
+                            Title = "Great Sleep",
+                            Message = "Your sleep quality has been excellent! Keep up your current evening routine."
+                        });
+                    }
+                }
+
+                // Rule 2: Steps/Activity
+                if (!insights.Any() && watchData.Any(d => d.Steps != null))
+                {
+                    var avgSteps = watchData.Where(d => d.Steps != null).Average(d => d.Steps);
+                    if (avgSteps < 4000)
+                    {
+                        insights.Add(new UserInsight
+                        {
+                            UserId = userId,
+                            Type = InsightType.DailyTip,
+                            Title = "Time to Move",
+                            Message = "Your daily activity is a bit low this week. Even a 15-minute walk can boost your focus and mood!"
+                        });
+                    }
+                }
+                
+                // Rule 3: Integration with Assessment
+                if (!insights.Any() && assessment != null && !string.IsNullOrEmpty(assessment.AssessmentDataJson))
+                {
+                    try 
+                    {
+                        var doc = JsonDocument.Parse(assessment.AssessmentDataJson);
+                        if (doc.RootElement.TryGetProperty("stress_level", out var stressProp) && stressProp.GetString() == "high")
+                        {
+                             var avgHrv = watchData.Where(d => d.Hrv != null).Select(d => d.Hrv).DefaultIfEmpty(0).Average();
+                             if (avgHrv > 0 && avgHrv < 40) 
+                             {
+                                 insights.Add(new UserInsight
+                                 {
+                                     UserId = userId,
+                                     Type = InsightType.Alert,
+                                     Title = "High Stress Detected",
+                                     Message = "Based on your initial assessment and your recent Heart Rate Variability, your body is experiencing high stress. Taking a short Simulation or Focus session is highly recommended."
+                                 });
+                             }
+                        }
+                    } catch { }
+                }
+
+                // Fallback tip if no specific rules matched
+                if (!insights.Any())
+                {
+                     insights.Add(new UserInsight
+                     {
+                         UserId = userId,
+                         Type = InsightType.DailyTip,
+                         Title = "Daily Health Tip",
+                         Message = "Staying hydrated and taking short breaks throughout the day helps maintain your focus and energy levels."
+                     });
+                }
             }
 
             _context.UserInsights.AddRange(insights);

@@ -17,10 +17,16 @@ namespace HazeClue.UI
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            
+            // Load environment variables from .env file (searching up the directory tree)
+            DotNetEnv.Env.TraversePath().Load();
 
             // Add services to the container.
 
             builder.Services.ConfigureServices(builder.Configuration);
+            
+            // Register LLM Service
+            builder.Services.AddHttpClient<HazeClue.Core.Domain.Contracts.ILLMService, HazeClue.Infrastructure.Services.GroqService>();
 
             // Configure CORS
             builder.Services.AddCors(options =>
